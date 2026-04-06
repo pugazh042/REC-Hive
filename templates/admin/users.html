@@ -1,0 +1,14 @@
+{% extends "admin/base_admin.html" %}
+{% load static %}
+{% block title %}Admin — Users{% endblock %}
+{% block admin_page_title %}Users{% endblock %}
+{% block admin_sidebar %}{% include "components/admin_sidebar.html" with admin_nav="users" %}{% endblock %}
+{% block admin_content %}
+<div class="table-wrap card mt-2">
+  <table class="table" id="users-table">
+    <thead><tr><th>Email</th><th>Role</th><th>Orders</th><th>Status</th><th></th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/pages/admin_users.js' %}"></script>{% endblock %}

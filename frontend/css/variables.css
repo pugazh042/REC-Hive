@@ -1,0 +1,41 @@
+:root {
+  /* Brand — REC Hive */
+  --primary: #6a1b99;
+  --primary-hover: #55147a;
+  --secondary: #8e24aa;
+  --accent: #ce93d8;
+  --accent-soft: rgba(106, 27, 153, 0.12);
+
+  --bg: #f5f3f7;
+  --card-bg: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #666666;
+  --border: #e0e0e0;
+
+  --success: #0d9f4c;
+  --warning: #f59e0b;
+  --danger: #d92d20;
+
+  --radius-sm: 12px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  --shadow-sm: 0 4px 16px rgba(26, 26, 26, 0.06);
+  --shadow-md: 0 12px 32px rgba(26, 26, 26, 0.08);
+  --shadow-hover: 0 16px 40px rgba(106, 27, 153, 0.12);
+
+  --font: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* 8px grid */
+  --s-1: 8px;
+  --s-2: 16px;
+  --s-3: 24px;
+  --s-4: 32px;
+
+  --bottom-nav-h: 68px;
+  --header-h: 56px;
+  --admin-sidebar-w: 240px;
+
+  --focus-ring: 0 0 0 3px rgba(106, 27, 153, 0.35);
+}

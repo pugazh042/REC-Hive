@@ -1,0 +1,22 @@
+<header class="app-header">
+  <div class="app-header__row">
+    {% if back_url %}
+    <a href="{{ back_url }}" class="icon-btn" aria-label="Back">←</a>
+    {% else %}
+    <span class="brand-mark" aria-hidden="true">🍯</span>
+    {% endif %}
+    <div class="app-header__titles">
+      <p class="eyebrow">REC Hive</p>
+      <h1 class="app-header__title">{{ title }}</h1>
+    </div>
+    <a href="{% url 'cart' %}" class="icon-btn" aria-label="Cart" title="Cart">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M6 6 5 3H2"/></svg>
+    </a>
+  </div>
+  {% if show_search_bar %}
+  <div class="app-header__search search-wrap">
+    <input type="search" class="input input--search" id="global-search" placeholder="Search outlets, dishes…" autocomplete="off" aria-label="Search">
+    <div id="search-suggest" class="suggest-panel" role="listbox" aria-label="Suggestions"></div>
+  </div>
+  {% endif %}
+</header>

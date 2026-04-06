@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Home{% endblock %}
+{% block body_class %}page-customer has-bottom-nav{% endblock %}
+{% block content %}
+<div class="customer-layout">
+  {% include "components/customer_header.html" with title="Good day" show_search_bar=True %}
+  <main class="main-pad" id="home-root">
+    <div class="section__head mt-2">
+      <h2 class="h2">Quick links</h2>
+    </div>
+    <div class="chip-row mb-2">
+      <a class="chip is-active" href="{% url 'order_history' %}">Recent orders</a>
+      <a class="chip" href="{% url 'outlets' %}">All outlets</a>
+    </div>
+    <section class="section">
+      <div class="section__head">
+        <h2>Categories</h2>
+      </div>
+      <div class="chip-row" id="category-chips"></div>
+    </section>
+    <section class="section">
+      <div class="section__head">
+        <h2>Featured outlets</h2>
+        <a href="{% url 'outlets' %}" class="link">See all</a>
+      </div>
+      <div class="card-row" id="featured-shops"></div>
+    </section>
+    <section class="section">
+      <div class="section__head">
+        <h2>Popular picks</h2>
+      </div>
+      <div class="product-grid" id="popular-items"></div>
+    </section>
+  </main>
+  {% include "components/bottom_nav.html" with active="home" %}
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/pages/home.js' %}"></script>{% endblock %}

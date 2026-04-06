@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Kitchen{% endblock %}
+{% block body_class %}page-worker{% endblock %}
+{% block body %}
+<header class="sk-topbar">
+  <div class="sk-topbar__inner">
+    <strong>🍳 Kitchen / Counter</strong>
+    <nav class="sk-nav">
+      <a href="{% url 'home' %}">Home</a>
+      <a href="{% url 'logout' %}">Logout</a>
+    </nav>
+  </div>
+</header>
+<div class="admin-inner sk-body">
+  <h1 class="h1">Assigned outlet orders</h1>
+  <div class="stack mt-lg" id="wk-orders"></div>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/pages/worker_orders.js' %}"></script>{% endblock %}

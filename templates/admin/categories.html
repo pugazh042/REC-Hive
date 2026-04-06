@@ -1,0 +1,17 @@
+{% extends "admin/base_admin.html" %}
+{% load static %}
+{% block title %}Admin — Categories{% endblock %}
+{% block admin_page_title %}Categories{% endblock %}
+{% block admin_sidebar %}{% include "components/admin_sidebar.html" with admin_nav="cats" %}{% endblock %}
+{% block admin_content %}
+<div class="card mt-2">
+  <form id="cat-form" class="form-stack">
+    {% csrf_token %}
+    <label class="field"><span>Name</span><input class="input" name="name" required></label>
+    <label class="field"><span>Icon (emoji)</span><input class="input" name="icon" placeholder="🍛"></label>
+    <button type="submit" class="btn btn--primary">Add category</button>
+  </form>
+</div>
+<ul class="stack mt-3" id="cat-list"></ul>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/pages/admin_categories.js' %}"></script>{% endblock %}

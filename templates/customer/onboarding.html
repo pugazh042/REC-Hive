@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}How it works{% endblock %}
+{% block body_class %}page-onboarding{% endblock %}
+{% block content %}
+<div class="page-pad">
+  <header class="mb-lg">
+    <a href="{% url 'splash' %}" class="link-back">← Back</a>
+    <h1 class="h1 mt-md">Campus ordering, simplified</h1>
+    <p class="muted">Browse outlets, add to cart, pay at pickup — all in one place.</p>
+  </header>
+  <ol class="steps">
+    <li><strong>Pick an outlet</strong><span class="muted"> Food, juice, stationery & more.</span></li>
+    <li><strong>Build your cart</strong><span class="muted"> Live availability per item.</span></li>
+    <li><strong>Track pickup</strong><span class="muted"> Know when your order is ready.</span></li>
+  </ol>
+  <a class="btn btn--primary btn--block mt-xl" href="{% url 'signup' %}">Create account</a>
+  <a class="btn btn--secondary btn--block mt-sm" href="{% url 'login' %}">Login</a>
+</div>
+{% endblock %}

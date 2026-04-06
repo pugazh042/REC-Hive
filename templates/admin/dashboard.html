@@ -1,0 +1,10 @@
+{% extends "admin/base_admin.html" %}
+{% load static %}
+{% block title %}Admin — Dashboard{% endblock %}
+{% block admin_page_title %}Dashboard{% endblock %}
+{% block admin_sidebar %}{% include "components/admin_sidebar.html" with admin_nav="dash" %}{% endblock %}
+{% block admin_content %}
+<p class="muted mt-1">Live counts across the campus platform</p>
+<div class="stat-grid mt-3" id="admin-stats"></div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/pages/admin_dashboard.js' %}"></script>{% endblock %}

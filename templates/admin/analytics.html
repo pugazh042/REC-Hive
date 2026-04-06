@@ -1,0 +1,13 @@
+{% extends "admin/base_admin.html" %}
+{% load static %}
+{% block title %}Admin — Analytics{% endblock %}
+{% block admin_page_title %}Analytics{% endblock %}
+{% block admin_sidebar %}{% include "components/admin_sidebar.html" with admin_nav="analytics" %}{% endblock %}
+{% block admin_content %}
+<div class="stat-grid mt-2" id="analytics-summary"></div>
+<div class="card mt-3">
+  <h2 class="h2">Top items (all time)</h2>
+  <ul id="top-items" class="stack mt-2"></ul>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/pages/admin_analytics.js' %}"></script>{% endblock %}

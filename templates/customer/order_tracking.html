@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Track order{% endblock %}
+{% block body_class %}page-customer has-bottom-nav{% endblock %}
+{% block content %}
+{% url 'order_history' as orders_back %}
+<div class="customer-layout">
+  {% include "components/customer_header.html" with title="Order status" back_url=orders_back show_search_bar=False %}
+  <main class="main-pad" data-order-id="{{ order_id }}">
+    <div id="track-root"></div>
+  </main>
+  {% include "components/bottom_nav.html" with active="orders" %}
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/pages/order_tracking.js' %}"></script>{% endblock %}

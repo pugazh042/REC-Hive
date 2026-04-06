@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body_class %}page-shopkeeper{% endblock %}
+{% block body %}
+<header class="sk-topbar">
+  <div class="sk-topbar__inner">
+    <strong>🍯 Shopkeeper</strong>
+    <nav class="sk-nav">
+      <a href="{% url 'shopkeeper_dashboard' %}">Overview</a>
+      <a href="{% url 'shopkeeper_products' %}">Products</a>
+      <a href="{% url 'shopkeeper_orders' %}">Orders</a>
+      <a href="{% url 'shopkeeper_reports' %}">Reports</a>
+      <a href="{% url 'home' %}">App</a>
+      <a href="{% url 'logout' %}">Logout</a>
+    </nav>
+  </div>
+</header>
+<div class="admin-inner sk-body">
+  {% block sk_content %}{% endblock %}
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Favorites{% endblock %}
+{% block body_class %}page-customer has-bottom-nav{% endblock %}
+{% block content %}
+<div class="customer-layout">
+  {% include "components/customer_header.html" with title="Favorites" show_search_bar=False %}
+  <main class="main-pad">
+    <section class="section">
+      <h2 class="h2">Shops</h2>
+      <div class="stack" id="fav-shops"></div>
+    </section>
+    <section class="section mt-xl">
+      <h2 class="h2">Products</h2>
+      <div class="stack" id="fav-products"></div>
+    </section>
+  </main>
+  {% include "components/bottom_nav.html" with active="favorites" %}
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/pages/favorites.js' %}"></script>{% endblock %}

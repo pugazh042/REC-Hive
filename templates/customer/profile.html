@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Profile{% endblock %}
+{% block body_class %}page-customer has-bottom-nav{% endblock %}
+{% block content %}
+<div class="customer-layout">
+  {% include "components/customer_header.html" with title="Profile" show_search_bar=False %}
+  <main class="main-pad">
+    <div class="card profile-card">
+      <p class="eyebrow">Signed in as</p>
+      <p class="h2" id="profile-email">{{ user.email }}</p>
+      <p class="muted" id="profile-role">{{ current_role_slug|default:"customer" }}</p>
+    </div>
+    <form id="profile-form" class="form-stack mt-lg">
+      {% csrf_token %}
+      <label class="field"><span>First name</span><input class="input" name="first_name" value="{{ user.first_name }}"></label>
+      <label class="field"><span>Last name</span><input class="input" name="last_name" value="{{ user.last_name }}"></label>
+      <label class="field"><span>Phone</span><input class="input" name="phone" value="{{ user.phone }}"></label>
+      <button type="submit" class="btn btn--primary btn--block">Save</button>
+    </form>
+    <div class="mt-xl stack">
+      {% if user.is_staff or current_role_slug == 'admin' %}
+      <a class="btn btn--secondary btn--block" href="{% url 'admin_dashboard' %}">Admin panel</a>
+      {% endif %}
+      {% if current_role_slug == 'shopkeeper' %}
+      <a class="btn btn--secondary btn--block" href="{% url 'shopkeeper_dashboard' %}">Shopkeeper</a>
+      {% endif %}
+      {% if current_role_slug == 'worker' %}
+      <a class="btn btn--secondary btn--block" href="{% url 'worker_orders' %}">Kitchen</a>
+      {% endif %}
+      <a class="btn btn--ghost btn--block" href="{% url 'logout' %}">Logout</a>
+    </div>
+  </main>
+  {% include "components/bottom_nav.html" with active="profile" %}
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'js/pages/profile.js' %}"></script>{% endblock %}

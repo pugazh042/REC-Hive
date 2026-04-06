@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Outlet{% endblock %}
+{% block body_class %}page-customer has-bottom-nav{% endblock %}
+{% block content %}
+{% url 'outlets' as outlets_back %}
+<div class="customer-layout">
+  {% include "components/customer_header.html" with title="Outlet" back_url=outlets_back show_search_bar=False %}
+  <main class="main-pad" data-shop-slug="{{ shop_slug }}">
+    <div id="shop-hero" class="shop-hero"></div>
+    <section class="section">
+      <div class="section__head"><h2>Menu</h2></div>
+      <div class="stack" id="shop-products"></div>
+    </section>
+  </main>
+  {% include "components/bottom_nav.html" with active="outlets" %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>window.__SHOP_SLUG__ = "{{ shop_slug }}";</script>
+<script src="{% static 'js/pages/outlet_detail.js' %}"></script>
+{% endblock %}

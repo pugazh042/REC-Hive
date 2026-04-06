@@ -1,0 +1,20 @@
+<aside class="sidebar" aria-label="Admin">
+  <div class="sidebar__brand">
+    <span class="brand-mark">🍯</span>
+    <div>
+      <strong>REC Hive</strong>
+      <p class="muted small">Admin</p>
+    </div>
+  </div>
+  <nav class="sidebar__nav">
+    <a href="{% url 'admin_dashboard' %}" class="sidebar__link {% if admin_nav == 'dash' %}is-active{% endif %}">Dashboard</a>
+    <a href="{% url 'admin_shops' %}" class="sidebar__link {% if admin_nav == 'shops' %}is-active{% endif %}">Shops</a>
+    <a href="{% url 'admin_categories' %}" class="sidebar__link {% if admin_nav == 'cats' %}is-active{% endif %}">Categories</a>
+    <a href="{% url 'admin_users' %}" class="sidebar__link {% if admin_nav == 'users' %}is-active{% endif %}">Users</a>
+    <a href="{% url 'admin_orders' %}" class="sidebar__link {% if admin_nav == 'orders' %}is-active{% endif %}">Orders</a>
+    <a href="{% url 'admin_products' %}" class="sidebar__link {% if admin_nav == 'products' %}is-active{% endif %}">Products</a>
+    <a href="{% url 'admin_analytics' %}" class="sidebar__link {% if admin_nav == 'analytics' %}is-active{% endif %}">Analytics</a>
+    <a href="{% url 'home' %}" class="sidebar__link">Customer app</a>
+    <a href="{% url 'logout' %}" class="sidebar__link">Logout</a>
+  </nav>
+</aside>

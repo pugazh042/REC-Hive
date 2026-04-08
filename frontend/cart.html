@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive – Cart</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="home.html">REC Hive</a>
+      <ul class="nav-links">
+        <li><a href="home.html">Home</a></li>
+        <li><a href="shops.html">Shops</a></li>
+        <li><a href="orders.html">Orders</a></li>
+      </ul>
+      <div class="nav-right">
+        <span id="profileSlot"></span>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width:860px;">
+    <button class="btn-outline back-btn" onclick="goBackOrHome('products.html')">Products</button>
+    <div class="page-header">
+      <h1>Your Cart</h1>
+      <p>Review items and quantities before checkout.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr auto;gap:32px;align-items:start;">
+      <div>
+        <div id="cartItems" style="display:grid;gap:12px;"></div>
+      </div>
+
+      <div class="card" style="min-width:240px;position:sticky;top:calc(var(--nav-h) + 20px);">
+        <p class="label" style="margin-bottom:12px;">Order Summary</p>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span class="muted">Items</span>
+          <span id="itemCount" style="font-weight:500;">0</span>
+        </div>
+        <hr class="divider" style="margin:12px 0;" />
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px;">
+          <span style="font-weight:600;">Total</span>
+          <span id="total" style="font-family:var(--font-display);font-size:1.375rem;font-weight:800;letter-spacing:-0.02em;">₹0</span>
+        </div>
+        <a class="btn-primary" href="payment.html" id="checkoutBtn" style="width:100%;justify-content:center;padding:13px;">
+          Checkout →
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/cart.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function render() {
+      const cart = getCart();
+      const container = document.getElementById("cartItems");
+      const checkoutBtn = document.getElementById("checkoutBtn");
+
+      if (!cart.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🛒</div>
+            <p>Your cart is empty.</p>
+            <a href="shops.html" class="btn-primary" style="margin-top:16px;display:inline-flex;">Browse Shops</a>
+          </div>`;
+        document.getElementById("total").textContent = "₹0";
+        document.getElementById("itemCount").textContent = "0";
+        checkoutBtn.style.pointerEvents = "none";
+        checkoutBtn.style.opacity = "0.4";
+        return;
+      }
+
+      checkoutBtn.style.pointerEvents = "";
+      checkoutBtn.style.opacity = "";
+
+      container.innerHTML = cart.map((item) => `
+        <article class="card" style="display:flex;align-items:center;gap:16px;">
+          <div style="flex:1;min-width:0;">
+            <h3 style="margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name}</h3>
+            <p class="muted" style="margin-bottom:4px;">${item.shop || "Shop"}</p>
+            <span class="badge badge-gray">${item.product_type}</span>
+            <p class="muted" style="font-size:0.8rem;margin-top:4px;">Available stock: ${Number.isFinite(Number(item.stock)) ? item.stock : "N/A"}</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            <span style="font-family:var(--font-display);font-weight:700;font-size:1.0625rem;">₹${item.price}</span>
+            <button class="btn-outline qty-dec" data-id="${item.product_id}" style="padding:6px 10px;">-</button>
+            <input type="number" min="1" max="${Number.isFinite(Number(item.stock)) ? item.stock : ''}" value="${item.quantity}" data-id="${item.product_id}" class="qty-input" style="width:56px;" />
+            <button class="btn-outline qty-inc" data-id="${item.product_id}" style="padding:6px 10px;">+</button>
+            <button class="btn-outline" data-remove="${item.product_id}" style="padding:8px 12px;color:var(--danger);border-color:var(--danger);font-size:0.8125rem;">✕</button>
+          </div>
+        </article>
+      `).join("");
+
+      document.querySelectorAll(".qty-input").forEach((input) => {
+        input.addEventListener("change", () => {
+          const item = getCart().find((i) => i.product_id === Number(input.dataset.id));
+          const stock = Number(item?.stock);
+          if (Number.isFinite(stock) && Number(input.value) > stock) {
+            showMessage(`Only ${stock} item(s) available`, "error");
+          }
+          updateCartQty(Number(input.dataset.id), Number(input.value));
+          render();
+        });
+      });
+      document.querySelectorAll(".qty-inc").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = Number(btn.dataset.id);
+          const item = getCart().find((i) => i.product_id === id);
+          if (Number.isFinite(Number(item?.stock)) && Number(item?.quantity || 0) >= Number(item?.stock)) {
+            showMessage(`Only ${item.stock} item(s) available`, "error");
+            return;
+          }
+          updateCartQty(id, Number(item?.quantity || 1) + 1);
+          render();
+        });
+      });
+      document.querySelectorAll(".qty-dec").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = Number(btn.dataset.id);
+          const item = getCart().find((i) => i.product_id === id);
+          updateCartQty(id, Math.max(1, Number(item?.quantity || 1) - 1));
+          render();
+        });
+      });
+
+      document.querySelectorAll("[data-remove]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          removeCartItem(Number(btn.dataset.remove));
+          render();
+        });
+      });
+
+      const total = cart.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
+      document.getElementById("total").textContent = `₹${total}`;
+      document.getElementById("itemCount").textContent = cart.reduce((s, i) => s + i.quantity, 0);
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive - Shop Orders</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="shop-dashboard.html">REC Hive <span class="seller-badge">Seller</span></a>
+      <ul class="nav-links">
+        <li><a href="shop-dashboard.html">Dashboard</a></li>
+        <li><a class="active" href="shop-orders.html">Orders</a></li>
+        <li><a href="shop-products.html">Products</a></li>
+        <li><a href="shop-settings.html">Settings</a></li>
+      </ul>
+      <div class="nav-right">
+        <button class="btn-outline" onclick="logout()" style="font-size:0.8125rem;">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <button class="btn-outline back-btn" onclick="goBackOrHome('shop-dashboard.html')">Dashboard</button>
+    <div class="page-header">
+      <h1>Order Management</h1>
+      <p>View and update incoming orders.</p>
+    </div>
+    <div class="section-header">
+      <h2>Current Orders</h2>
+      <button onclick="loadShopOrders()" class="btn-outline" style="font-size:0.8125rem;padding:7px 14px;">↻ Refresh</button>
+    </div>
+    <div id="orders" style="display:grid;gap:12px;"></div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function logout() { clearToken("shopToken"); location.href = "shop-login.html"; }
+
+    async function updateOrderStatus(orderId, status) {
+      try {
+        await apiFetch("/shop/update-order-status", {
+          method: "POST",
+          body: JSON.stringify({ order_id: orderId, status }),
+        }, "shopToken");
+        showMessage("Status updated", "success");
+        loadShopOrders();
+      } catch (e) { showMessage(e.message, "error"); }
+    }
+
+    function actionButtons(orderId, item) {
+      if (item.product.product_type === "food") {
+        if (item.shop_status === "pending")
+          return `<button class="btn-primary hive" style="font-size:0.8rem;padding:7px 14px;" onclick="updateOrderStatus(${orderId}, 'preparing')">Start Preparing</button>`;
+        if (item.shop_status === "preparing")
+          return `<button class="btn-primary" style="font-size:0.8rem;padding:7px 14px;background:var(--success);" onclick="updateOrderStatus(${orderId}, 'ready')">Mark Ready</button>`;
+        if (item.shop_status === "ready")
+          return `<button class="btn-primary" style="font-size:0.8rem;padding:7px 14px;background:var(--success);" onclick="updateOrderStatus(${orderId}, 'completed')">Complete/Pickup</button>`;
+      }
+      if (item.product.product_type === "packed" && item.shop_status === "pending")
+        return `<button class="btn-primary" style="font-size:0.8rem;padding:7px 14px;background:var(--success);" onclick="updateOrderStatus(${orderId}, 'available')">Mark Available</button>`;
+      if (item.product.product_type === "packed" && item.shop_status === "available")
+        return `<button class="btn-primary" style="font-size:0.8rem;padding:7px 14px;background:var(--success);" onclick="updateOrderStatus(${orderId}, 'completed')">Complete/Pickup</button>`;
+      return "";
+    }
+
+    function statusBadge(status) {
+      const map = {
+        pending: "badge-amber", preparing: "badge-amber",
+        ready: "badge-green", available: "badge-green", completed: "badge-green",
+      };
+      return `<span class="badge ${map[status] || 'badge-gray'}">${status}</span>`;
+    }
+
+    async function loadShopOrders() {
+      try {
+        if (!requireShopAuth("shop-login.html")) return;
+        const data = await apiFetch("/shop/orders", {}, "shopToken");
+        if (!data.length) {
+          document.getElementById("orders").innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📋</div>
+              <p>No orders yet. They'll appear here when customers order.</p>
+            </div>`;
+          return;
+        }
+        document.getElementById("orders").innerHTML = data.map((order) => `
+          <article class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+              <h3>Order #${order.order_id}</h3>
+              <span class="muted" style="font-size:0.875rem;">Customer: <strong>${order.customer}</strong></span>
+            </div>
+            <hr class="divider" />
+            <div style="display:grid;gap:10px;margin-top:12px;">
+              ${order.items.map((item) => `
+                <div class="order-item-row">
+                  <div>
+                    <span style="font-weight:500;">${item.product.name}</span>
+                    <span class="muted"> × ${item.quantity}</span>
+                    <span class="badge badge-gray" style="margin-left:6px;">${item.product.product_type}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    ${statusBadge(item.shop_status)}
+                    ${actionButtons(order.order_id, item)}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </article>
+        `).join("");
+      } catch (e) {
+        document.getElementById("orders").innerHTML = `<p class='muted'>${e.message}</p>`;
+      }
+    }
+
+    loadShopOrders();
+    setInterval(loadShopOrders, 20000);
+  </script>
+</body>
+</html>

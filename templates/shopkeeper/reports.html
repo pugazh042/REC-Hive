@@ -1,9 +1,0 @@
-{% extends "shopkeeper/base_shopkeeper.html" %}
-{% load static %}
-{% block title %}Reports{% endblock %}
-{% block sk_content %}
-<h1 class="h1">Sales</h1>
-<p class="muted">Use admin analytics for campus-wide stats. Here you see your shop order queue.</p>
-<div class="stack mt-lg" id="sk-reports-orders"></div>
-{% endblock %}
-{% block extra_js %}<script src="{% static 'js/pages/shopkeeper_reports.js' %}"></script>{% endblock %}

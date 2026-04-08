@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive - Edit Profile</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="home.html">REC Hive</a>
+      <ul class="nav-links">
+        <li><a href="home.html">Home</a></li>
+        <li><a href="shops.html">Shops</a></li>
+        <li><a href="orders.html">Orders</a></li>
+      </ul>
+      <div class="nav-right">
+        <button class="btn-outline" onclick="logout()" style="font-size:0.8125rem;">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width:640px;">
+    <button class="btn-outline back-btn" onclick="goBackOrHome('home.html')">Back</button>
+    <div class="page-header">
+      <h1>Edit Profile</h1>
+      <p>Update your account details.</p>
+    </div>
+    <div class="card">
+      <div class="field">
+        <label>Username</label>
+        <input id="username" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input id="email" type="email" />
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>First Name</label>
+          <input id="first_name" />
+        </div>
+        <div class="field">
+          <label>Last Name</label>
+          <input id="last_name" />
+        </div>
+      </div>
+      <button class="btn-primary" id="saveBtn" style="width:100%;">Save Profile</button>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    async function loadProfile() {
+      if (!requireAuth("login.html")) return;
+      const data = await apiFetch("/api/profile/");
+      ["username", "email", "first_name", "last_name"].forEach((key) => {
+        document.getElementById(key).value = data[key] || "";
+      });
+    }
+
+    async function saveProfile() {
+      const btn = document.getElementById("saveBtn");
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+      try {
+        await apiFetch("/api/profile/", {
+          method: "PUT",
+          body: JSON.stringify({
+            username: document.getElementById("username").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            first_name: document.getElementById("first_name").value.trim(),
+            last_name: document.getElementById("last_name").value.trim(),
+          }),
+        });
+        showMessage("Profile updated successfully", "success");
+      } catch (e) {
+        showMessage(e.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Save Profile";
+      }
+    }
+
+    function logout() {
+      clearToken("token");
+      location.href = "login.html";
+    }
+
+    document.getElementById("saveBtn").addEventListener("click", saveProfile);
+    loadProfile().catch((e) => showMessage(e.message, "error"));
+  </script>
+</body>
+</html>

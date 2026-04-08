@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive – Shops</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="home.html">REC Hive</a>
+      <ul class="nav-links">
+        <li><a href="home.html">Home</a></li>
+        <li><a class="active" href="shops.html">Shops</a></li>
+        <li><a href="orders.html">Orders</a></li>
+      </ul>
+      <div class="nav-right">
+        <button class="cart-btn" onclick="location.href='cart.html'" aria-label="Cart">
+          🛒 Cart <span class="cart-badge" id="cartBadge">0</span>
+        </button>
+        <span id="profileSlot"></span>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <button class="btn-outline back-btn" onclick="goBackOrHome()">Home</button>
+    <div class="page-header">
+      <h1 id="title">Campus Shops</h1>
+      <p>Select a shop to browse products and add to cart.</p>
+      <div style="margin-top:12px;max-width:480px;">
+        <input id="shopsSearch" placeholder="Search outlets..." />
+      </div>
+    </div>
+    <div id="shopsList" class="grid"></div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/cart.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    document.getElementById("cartBadge").textContent = getCartSummary().itemCount;
+    const category = new URLSearchParams(location.search).get("category");
+    const query = (new URLSearchParams(location.search).get("q") || "").trim().toLowerCase();
+    if (query) document.getElementById("shopsSearch").value = query;
+    if (category) {
+      document.getElementById("title").textContent = `${category} Shops`;
+    }
+
+    async function loadShops() {
+      const endpoint = category ? `/api/shops/?category=${encodeURIComponent(category)}` : "/api/shops/";
+      let shops = await apiFetch(endpoint, {}, null);
+      const text = (document.getElementById("shopsSearch").value || "").trim().toLowerCase();
+      if (text) {
+        shops = shops.filter((shop) => `${shop.name} ${shop.description || ""}`.toLowerCase().includes(text));
+      }
+      if (!shops.length) {
+        document.getElementById("shopsList").innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1;">
+            <div class="empty-icon">🏪</div>
+            <p>No shops found${category ? ` in ${category}` : ''}.</p>
+          </div>`;
+        return;
+      }
+      document.getElementById("shopsList").innerHTML = shops.map((shop) => `
+        <article class="card" style="display:flex;flex-direction:column;">
+          ${shop.image_url ? `<img src="${shop.image_url}" alt="${shop.name}" class="product-img" onerror="this.style.display='none'" />` : `<div class="product-img-placeholder">🏪</div>`}
+          <h3 style="margin-bottom:6px;">${shop.name}</h3>
+          <p class="muted" style="flex:1;margin-bottom:12px;">${shop.description || "No description available."}</p>
+          ${(shop.categories || []).length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">${(shop.categories || []).map(c => `<span class="badge badge-hive">${c}</span>`).join('')}</div>` : ''}
+          <a class="btn-primary" href="products.html?shop_id=${shop.id}" style="width:100%;justify-content:center;">View Products →</a>
+        </article>
+      `).join("");
+    }
+
+    document.getElementById("shopsSearch").addEventListener("input", loadShops);
+    loadShops().catch((e) => showMessage(e.message, "error"));
+  </script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive – Shop Settings</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="shop-dashboard.html">REC Hive <span class="seller-badge">Seller</span></a>
+      <ul class="nav-links">
+        <li><a href="shop-dashboard.html">Dashboard</a></li>
+        <li><a href="shop-orders.html">Orders</a></li>
+        <li><a href="shop-products.html">Products</a></li>
+        <li><a class="active" href="shop-settings.html">Settings</a></li>
+      </ul>
+      <div class="nav-right">
+        <button class="btn-outline" onclick="logout()" style="font-size:0.8125rem;">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width:680px;">
+    <button class="btn-outline back-btn" onclick="goBackOrHome('shop-dashboard.html')">Dashboard</button>
+    <div class="page-header">
+      <h1>Shop Settings</h1>
+      <p>Update your shop profile and payment details.</p>
+    </div>
+
+    <div style="display:grid;gap:16px;">
+      <div class="card">
+        <h3 style="margin-bottom:16px;">Shop Profile</h3>
+        <div class="field"><label>Shop Name</label><input id="name" placeholder="Your shop name" /></div>
+        <div class="field"><label>Description</label><textarea id="description" placeholder="Tell customers about your shop…"></textarea></div>
+        <div class="field"><label>Contact Phone</label><input id="contact_phone" placeholder="+91 XXXXX XXXXX" type="tel" /></div>
+        <div class="field"><label>Shop Image URL</label><input id="image_url" placeholder="https://…" /></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom:6px;">Payment Settings</h3>
+        <p class="muted" style="margin-bottom:16px;">Customers will use this UPI ID to pay for orders.</p>
+        <div class="field">
+          <label>UPI ID</label>
+          <input id="upi_id" placeholder="yourshop@upi" />
+        </div>
+        <div class="alert alert-warning" style="margin-bottom:0;">
+          Make sure this UPI ID is active and correct before saving.
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="saveSettings()" id="saveBtn" style="width:100%;padding:14px;font-size:1rem;">
+        Save Settings
+      </button>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function logout() { clearToken("shopToken"); location.href = "shop-login.html"; }
+
+    async function loadSettings() {
+      if (!requireShopAuth("shop-login.html")) return;
+      const data = await apiFetch("/shop/profile", {}, "shopToken");
+      ["name", "description", "contact_phone", "upi_id", "image_url"].forEach((key) => {
+        document.getElementById(key).value = data[key] || "";
+      });
+    }
+
+    async function saveSettings() {
+      const btn = document.getElementById("saveBtn");
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+      try {
+        await apiFetch("/shop/profile", {
+          method: "PUT",
+          body: JSON.stringify({
+            name: document.getElementById("name").value.trim(),
+            description: document.getElementById("description").value.trim(),
+            contact_phone: document.getElementById("contact_phone").value.trim(),
+            upi_id: document.getElementById("upi_id").value.trim(),
+            image_url: document.getElementById("image_url").value.trim(),
+          }),
+        }, "shopToken");
+        showMessage("Settings saved!", "success");
+      } catch (e) {
+        showMessage(e.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Save Settings";
+      }
+    }
+
+    loadSettings().catch((e) => showMessage(e.message, "error"));
+  </script>
+</body>
+</html>

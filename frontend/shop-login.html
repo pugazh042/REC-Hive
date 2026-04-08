@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive – Shop Login</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="home.html">REC Hive</a>
+    </div>
+  </nav>
+
+  <div class="auth-wrap">
+    <div style="width:100%;max-width:440px;">
+      <div class="auth-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div style="font-size:2rem;">🏪</div>
+          <span class="seller-badge">Seller Portal</span>
+        </div>
+        <h1>Shopkeeper Login</h1>
+        <p class="auth-subtitle">Access your dashboard to manage orders and products.</p>
+
+        <div class="field">
+          <label>Username</label>
+          <input id="username" placeholder="Enter your shop username" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password" />
+        </div>
+
+        <button class="btn-primary" onclick="shopLogin()" id="loginBtn" style="width:100%;padding:13px;margin-top:4px;">
+          Login to Dashboard
+        </button>
+
+        <div class="alert alert-warning" style="margin-top:16px;">
+          Only users assigned to a shop can access this portal.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    async function shopLogin() {
+      const btn = document.getElementById("loginBtn");
+      btn.disabled = true;
+      btn.textContent = "Signing in…";
+      try {
+        const data = await apiFetch("/shop/login", {
+          method: "POST",
+          body: JSON.stringify({
+            username: document.getElementById("username").value.trim(),
+            password: document.getElementById("password").value,
+          }),
+        }, null);
+        setToken(data.token, "shopToken");
+        showMessage("Login successful", "success");
+        window.location.href = "shop-dashboard.html";
+      } catch (e) {
+        showMessage(e.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Login to Dashboard";
+      }
+    }
+
+    document.addEventListener("keydown", (e) => { if (e.key === "Enter") shopLogin(); });
+  </script>
+</body>
+</html>

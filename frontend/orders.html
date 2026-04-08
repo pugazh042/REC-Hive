@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive – My Orders</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="home.html">REC Hive</a>
+      <ul class="nav-links">
+        <li><a href="home.html">Home</a></li>
+        <li><a href="shops.html">Shops</a></li>
+        <li><a class="active" href="orders.html">Orders</a></li>
+      </ul>
+      <div class="nav-right">
+        <button class="cart-btn" onclick="location.href='cart.html'" aria-label="Cart">
+          🛒 Cart <span class="cart-badge" id="cartBadge">0</span>
+        </button>
+        <span id="profileSlot"></span>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width:800px;">
+    <button class="btn-outline back-btn" onclick="goBackOrHome('home.html')">Home</button>
+    <div class="page-header">
+      <h1>My Orders</h1>
+      <p>Track the live status of your items.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+        <button class="btn-outline order-filter active-filter" data-filter="all">All</button>
+        <button class="btn-outline order-filter" data-filter="ready">Ready</button>
+        <button class="btn-outline order-filter" data-filter="pending">Pending</button>
+        <button class="btn-outline order-filter" data-filter="completed">Completed</button>
+      </div>
+    </div>
+    <div id="orders" style="display:grid;gap:16px;"></div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/cart.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function statusInfo(status) {
+      const map = {
+        pending:    { label: "Pending",    badge: "badge-amber",  msg: "Waiting to be processed" },
+        preparing:  { label: "Preparing",  badge: "badge-amber",  msg: "Being prepared now" },
+        ready:      { label: "Ready",      badge: "badge-green",  msg: "Ready for pickup! 🎉" },
+        available:  { label: "Available",  badge: "badge-green",  msg: "Available for pickup" },
+        completed:  { label: "Completed & Picked Up", badge: "badge-green", msg: "Delivered and finalized." },
+      };
+      return map[status] || { label: status, badge: "badge-gray", msg: "Processing" };
+    }
+
+    let activeFilter = "all";
+    document.getElementById("cartBadge").textContent = getCartSummary().itemCount;
+
+    function orderMatchesFilter(order) {
+      const statuses = order.items.map((i) => (i.shop_status || "").toLowerCase());
+      const hasReady = statuses.some((s) => ["ready", "available"].includes(s));
+      const hasPending = statuses.some((s) => ["pending", "preparing"].includes(s));
+      const completed = statuses.every((s) => ["completed"].includes(s));
+
+      if (activeFilter === "ready") return hasReady;
+      if (activeFilter === "pending") return hasPending;
+      if (activeFilter === "completed") return completed;
+      return true;
+    }
+
+    async function loadOrders() {
+      try {
+        if (!getToken("token")) {
+          promptAuthChoice("orders.html");
+          return;
+        }
+        let orders = await apiFetch("/api/orders/");
+        orders = orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).filter(orderMatchesFilter);
+        if (!orders.length) {
+          document.getElementById("orders").innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📋</div>
+              <p>No orders for this filter. <a href="shops.html" style="color:var(--ink);font-weight:500;">Browse shops →</a></p>
+            </div>`;
+          return;
+        }
+        document.getElementById("orders").innerHTML = orders.map((order) => `
+          <article class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+              <div>
+                <h3 style="margin-bottom:2px;">Order #${order.id}</h3>
+                <p class="muted">${new Date(order.created_at).toLocaleString()}</p>
+              </div>
+              <span style="font-family:var(--font-display);font-size:1.125rem;font-weight:700;">₹${order.total_amount}</span>
+            </div>
+            <hr class="divider" />
+            <div style="display:grid;gap:8px;margin-top:12px;">
+              ${order.items.map((item) => {
+                const s = statusInfo(item.shop_status);
+                return `
+                  <div class="order-item-row">
+                    <div>
+                      <span style="font-weight:500;font-size:0.9rem;">${item.product.name}</span>
+                      <span class="muted"> × ${item.quantity}</span>
+                      <p style="font-size:0.8rem;color:var(--ink-4);margin-top:2px;">${s.msg}</p>
+                    </div>
+                    <span class="badge ${s.badge}">${s.label}</span>
+                  </div>`;
+              }).join("")}
+            </div>
+          </article>
+        `).join("");
+      } catch (e) {
+        showMessage(e.message, "error");
+        document.getElementById("orders").innerHTML = `<p class='muted'>${e.message}</p>`;
+      }
+    }
+
+    document.querySelectorAll(".order-filter").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activeFilter = btn.dataset.filter;
+        document.querySelectorAll(".order-filter").forEach((b) => b.classList.remove("active-filter"));
+        btn.classList.add("active-filter");
+        loadOrders();
+      });
+    });
+
+    loadOrders();
+    // Auto-refresh every 30s
+    setInterval(loadOrders, 30000);
+  </script>
+</body>
+</html>

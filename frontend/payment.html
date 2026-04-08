@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive – Payment</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="home.html">REC Hive</a>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width:680px;">
+    <button class="btn-outline back-btn" onclick="goBackOrHome('cart.html')">Back to Cart</button>
+    <div class="page-header">
+      <h1>Checkout & Payment</h1>
+      <p>Pay using UPI and confirm your order.</p>
+    </div>
+
+    <div style="display:grid;gap:16px;">
+      <!-- Order Summary -->
+      <div class="card">
+        <p class="label" style="margin-bottom:14px;">Order Summary</p>
+        <div id="orderSummaryItems" style="display:grid;gap:8px;margin-bottom:14px;"></div>
+        <hr class="divider" />
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:4px;">
+          <span style="font-weight:600;">Total</span>
+          <span id="amount" style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;">₹0</span>
+        </div>
+      </div>
+
+      <!-- UPI Payment -->
+      <div class="card">
+        <p class="label" style="margin-bottom:14px;">UPI Payment</p>
+        <p class="muted" style="margin-bottom:12px;">Scan and pay each shop's amount using the QR below.</p>
+        <div id="shopPayments" style="display:grid;gap:12px;"></div>
+
+        <div class="field" style="margin-top:16px;">
+          <label>UPI Transaction Reference</label>
+          <input id="paymentRef" placeholder="e.g. TXN123456789" />
+          <p style="font-size:0.75rem;color:var(--ink-4);margin-top:4px;">Enter the reference number from your UPI app after payment.</p>
+        </div>
+
+        <button class="btn-primary" id="payBtn" onclick="placeOrder()" disabled style="width:100%;padding:14px;font-size:1rem;">
+          Confirm & Place Order
+        </button>
+        <p id="msg" class="muted" style="margin-top:10px;text-align:center;"></p>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/cart.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    if (!requireAuth("login.html")) { /* stop */ }
+
+    const DEFAULT_UPI_ID = "pugazhendhi2k5@okicici";
+    const cart = getCart();
+    const total = cart.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
+    document.getElementById("amount").textContent = `₹${total}`;
+
+    // Render order summary
+    document.getElementById("orderSummaryItems").innerHTML = cart.map(item => `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span style="font-weight:500;font-size:0.9rem;">${item.name}</span>
+          <span class="muted" style="font-size:0.8125rem;"> × ${item.quantity}</span>
+        </div>
+        <span style="font-weight:600;">₹${Number(item.price) * Number(item.quantity)}</span>
+      </div>
+    `).join("") || "<p class='muted'>No items.</p>";
+
+    function copyUPI(upiId, btnId) {
+      navigator.clipboard.writeText(upiId);
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      btn.textContent = "Copied!";
+      setTimeout(() => btn.textContent = "Copy", 1500);
+    }
+
+    function getShopGroups(items) {
+      const groups = {};
+      items.forEach((item) => {
+        const key = String(item.shop_id || "unknown");
+        if (!groups[key]) {
+          groups[key] = { shop_id: item.shop_id || null, shop: item.shop || "Shop", amount: 0 };
+        }
+        groups[key].amount += Number(item.price) * Number(item.quantity);
+      });
+      return Object.values(groups);
+    }
+
+    function buildUpiLink(upiId, shopName, amount) {
+      const params = new URLSearchParams({
+        pa: upiId,
+        pn: `${shopName} - REC Hive`,
+        am: amount.toFixed(2),
+        cu: "INR",
+        tn: "Order payment",
+      });
+      return `upi://pay?${params.toString()}`;
+    }
+
+    async function renderShopPayments() {
+      const groups = getShopGroups(cart);
+      if (!groups.length) {
+        document.getElementById("shopPayments").innerHTML = "<p class='muted'>No cart items found.</p>";
+        return;
+      }
+      const shops = await apiFetch("/api/shops/", {}, null);
+      const shopMap = new Map(shops.map((s) => [String(s.id), s]));
+      document.getElementById("shopPayments").innerHTML = groups.map((group, i) => {
+        const shop = group.shop_id ? shopMap.get(String(group.shop_id)) : null;
+        const shopName = shop?.name || group.shop || "Shop";
+        const upiId = (shop?.upi_id || "").trim() || DEFAULT_UPI_ID;
+        const upiLink = buildUpiLink(upiId, shopName, group.amount);
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}`;
+        const copyId = `copyBtn-${i}`;
+        return `
+          <div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+              <div>
+                <p style="font-weight:600;">${shopName}</p>
+                <p class="muted" style="font-size:0.8125rem;">UPI: ${upiId}</p>
+                <p style="font-weight:700;margin-top:4px;">Amount: ₹${group.amount}</p>
+              </div>
+              <button onclick="copyUPI('${upiId}', '${copyId}')" id="${copyId}" style="background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:0.8125rem;font-family:var(--font-body);">Copy</button>
+            </div>
+            <div style="margin-top:10px;display:flex;justify-content:center;">
+              <img src="${qrUrl}" alt="UPI QR for ${shopName}" style="width:190px;height:190px;border-radius:8px;border:1px solid var(--border);" />
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    document.getElementById("paymentRef").addEventListener("input", togglePayButton);
+    renderShopPayments().catch((e) => showMessage(e.message, "error"));
+
+    function togglePayButton() {
+      const ref = document.getElementById("paymentRef").value.trim();
+      document.getElementById("payBtn").disabled = !(ref.length >= 4);
+    }
+
+    async function placeOrder() {
+      const btn = document.getElementById("payBtn");
+      btn.disabled = true;
+      btn.textContent = "Placing order…";
+      try {
+        if (!cart.length) { showMessage("Cart is empty", "error"); return; }
+        const latestProducts = await apiFetch("/api/products/", {}, null);
+        const latestMap = new Map(latestProducts.map((p) => [Number(p.id), Number(p.stock)]));
+        const exceeded = cart.find((item) => Number(item.quantity) > Number(latestMap.get(Number(item.product_id)) ?? 0));
+        if (exceeded) {
+          showMessage(`Stock changed for ${exceeded.name}. Please update your cart.`, "error");
+          return;
+        }
+        const paymentRef = document.getElementById("paymentRef").value.trim();
+        const order = await apiFetch("/api/create-order/", {
+          method: "POST",
+          body: JSON.stringify({
+            is_paid_confirmed: true,
+            payment_ref: paymentRef,
+            items: cart.map((item) => ({ product_id: item.product_id, quantity: item.quantity })),
+          }),
+        });
+        await apiFetch("/api/payment/verify/", {
+          method: "POST",
+          body: JSON.stringify({ order_id: order.id, payment_ref: paymentRef, success: true }),
+        });
+        clearCart();
+        document.getElementById("msg").textContent = "Order placed and payment verified!";
+        showMessage("Order confirmed! 🎉", "success");
+        setTimeout(() => location.href = "orders.html", 1200);
+      } catch (e) {
+        showMessage(e.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Confirm & Place Order";
+      }
+    }
+  </script>
+</body>
+</html>

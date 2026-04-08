@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive – Register</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="home.html">REC Hive</a>
+    </div>
+  </nav>
+
+  <div class="auth-wrap">
+    <div style="width:100%;max-width:440px;">
+      <button class="btn-outline back-btn" onclick="goBackOrHome('login.html')" style="margin-bottom:24px;">Back to Login</button>
+      <div class="auth-card">
+        <div style="font-size:2.5rem;margin-bottom:14px;">🎓</div>
+        <h1>Create Account</h1>
+        <p class="auth-subtitle">Join REC Hive and start ordering on campus.</p>
+
+        <div class="field">
+          <label>Username</label>
+          <input id="username" placeholder="Choose a username" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input id="email" type="email" placeholder="your@email.com" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="Create a password" autocomplete="new-password" />
+        </div>
+        <button class="btn-primary" onclick="registerUser()" id="regBtn" style="width:100%;margin-top:4px;padding:13px;">
+          Create Account
+        </button>
+        <p style="text-align:center;margin-top:18px;" class="muted">
+          Already registered? <a href="login.html" style="color:var(--ink);font-weight:500;">Sign in</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    async function registerUser() {
+      const btn = document.getElementById("regBtn");
+      btn.disabled = true;
+      btn.textContent = "Creating account…";
+      try {
+        const data = await apiFetch("/api/register/", {
+          method: "POST",
+          body: JSON.stringify({
+            username: document.getElementById("username").value,
+            email: document.getElementById("email").value,
+            password: document.getElementById("password").value,
+          }),
+        }, null);
+        localStorage.setItem("token", data.token);
+        showMessage("Account created!", "success");
+        const next = new URLSearchParams(window.location.search).get("next") || "home.html";
+        setTimeout(() => { location.href = next; }, 500);
+      } catch (e) {
+        showMessage(e.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Create Account";
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive – Campus Ordering</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="home.html">REC Hive</a>
+      <ul class="nav-links">
+        <li><a class="active" href="home.html">Home</a></li>
+        <li><a href="shops.html">Shops</a></li>
+        <li><a href="orders.html">Orders</a></li>
+      </ul>
+      <div class="nav-right">
+        <button class="cart-btn" onclick="location.href='cart.html'">
+          🛒 Cart <span class="cart-badge" id="cartCount">0</span>
+        </button>
+        <span id="profileSlot"><a class="btn-login-nav" href="login.html">Login</a></span>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="hero">
+      <p class="label" style="margin-bottom:10px;">Welcome to REC Hive</p>
+      <h1>Campus Ordering<br/>Made Simple.</h1>
+      <p style="color:var(--ink-3);margin-top:12px;font-size:1.0625rem;max-width:480px;">
+        Browse shops, order food & essentials, and track your pickup — all in one place.
+      </p>
+      <div style="display:flex;gap:8px;margin-top:16px;max-width:620px;flex-wrap:wrap;">
+        <input id="globalSearch" placeholder="Search products or outlets..." style="flex:1;min-width:240px;" />
+        <button class="btn-outline" onclick="runSearch()">Search</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;">
+        <a class="btn-primary" href="shops.html">Browse Shops</a>
+        <a class="btn-outline" href="orders.html">My Orders</a>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/cart.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    document.getElementById("cartCount").textContent = getCartSummary().itemCount;
+
+    async function loadCategories() {
+      const categories = await apiFetch("/api/categories/", {}, null);
+      const emojis = ['🍔','📦','☕','🧃','📚','🍕','🛍️','🎨'];
+      const grid = document.getElementById("categoryGrid");
+      if (!grid) return;
+      if (!categories.length) {
+        grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🏪</div><p>No categories yet.</p></div>`;
+        return;
+      }
+      grid.innerHTML = categories.map((cat, i) => `
+        <a class="card-link" href="shops.html?category=${encodeURIComponent(cat.name)}">
+          <article class="card" style="cursor:pointer;">
+            <div style="font-size:2rem;margin-bottom:12px;">${emojis[i % emojis.length]}</div>
+            <h3 style="margin-bottom:4px;">${cat.name}</h3>
+            <p class="muted">${cat.shop_count} shop${cat.shop_count !== 1 ? 's' : ''}</p>
+            <div style="margin-top:14px;">
+              <span class="btn-primary" style="font-size:0.8125rem;padding:7px 14px;">Explore →</span>
+            </div>
+          </article>
+        </a>
+      `).join("");
+    }
+
+    loadCategories().catch((err) => showMessage(err.message, "error"));
+
+    function runSearch() {
+      const q = document.getElementById("globalSearch").value.trim();
+      if (!q) return;
+      location.href = `products.html?q=${encodeURIComponent(q)}`;
+    }
+    document.getElementById("globalSearch").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") runSearch();
+    });
+
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+  </script>
+</body>
+</html>

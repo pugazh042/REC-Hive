@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REC Hive – Products</title>
+  <link rel="stylesheet" href="/frontend/css/shared.css" />
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="home.html">REC Hive</a>
+      <ul class="nav-links">
+        <li><a href="home.html">Home</a></li>
+        <li><a class="active" href="shops.html">Shops</a></li>
+        <li><a href="orders.html">Orders</a></li>
+      </ul>
+      <div class="nav-right">
+        <button class="cart-btn" onclick="location.href='cart.html'" aria-label="Cart">
+          🛒 Cart <span class="cart-badge" id="cartBadge">0</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <button class="btn-outline back-btn" onclick="goBackOrHome('shops.html')">Shops</button>
+    <div class="page-header">
+      <h1>Products</h1>
+      <p>Browse items and add them to your cart.</p>
+      <div style="margin-top:12px;max-width:500px;">
+        <input id="productsSearch" placeholder="Search products..." />
+      </div>
+    </div>
+    <div id="productsList" class="grid"></div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/frontend/js/cart.js"></script>
+  <script src="/frontend/js/api.js"></script>
+  <script>
+    function showMessage(msg, type) {
+      const toast = document.getElementById("toast");
+      const el = document.createElement("div");
+      el.className = `toast-msg ${type}`;
+      el.textContent = msg;
+      toast.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    document.getElementById("cartBadge").textContent = getCartSummary().itemCount;
+    const shopId = new URLSearchParams(location.search).get("shop_id");
+    const query = (new URLSearchParams(location.search).get("q") || "").trim().toLowerCase();
+    if (query) document.getElementById("productsSearch").value = query;
+
+    async function loadProducts() {
+      const endpoint = shopId ? `/api/products/?shop_id=${shopId}` : "/api/products/";
+      let products = await apiFetch(endpoint);
+      const text = (document.getElementById("productsSearch").value || "").trim().toLowerCase();
+      if (text) {
+        products = products.filter((p) => `${p.name} ${p.description || ""} ${p.shop || ""}`.toLowerCase().includes(text));
+      }
+      if (!products.length) {
+        document.getElementById("productsList").innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1;">
+            <div class="empty-icon">📦</div>
+            <p>No products available right now.</p>
+          </div>`;
+        return;
+      }
+      document.getElementById("productsList").innerHTML = products.map((p) => `
+        <article class="card" style="display:flex;flex-direction:column;">
+          ${p.image_url
+            ? `<img src="${p.image_url}" alt="${p.name}" class="product-img" onerror="this.parentElement.querySelector('.product-img-placeholder').style.display='flex';this.style.display='none'" /><div class="product-img-placeholder" style="display:none;">🍱</div>`
+            : `<div class="product-img-placeholder">🍱</div>`
+          }
+          <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+            <span class="badge badge-gray">${p.product_type}</span>
+            <span class="badge badge-hive">${p.category_name}</span>
+          </div>
+          <h3 style="margin-bottom:4px;">${p.name}</h3>
+          <p class="muted" style="font-size:0.8125rem;margin-bottom:6px;">${p.shop}</p>
+          <p style="font-size:0.8rem;margin-bottom:8px;">
+            <span class="badge ${p.stock > 5 ? "badge-green" : p.stock > 0 ? "badge-amber" : "badge-red"}">
+              ${p.stock > 5 ? "In Stock" : p.stock > 0 ? `Low Stock (${p.stock})` : "Out of Stock"}
+            </span>
+          </p>
+          <p class="muted" style="font-size:0.8rem;margin-bottom:8px;">Available stock: ${p.stock}</p>
+          ${p.description ? `<p style="font-size:0.875rem;color:var(--ink-2);margin-bottom:12px;flex:1;">${p.description}</p>` : '<div style="flex:1;"></div>'}
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:12px;border-top:1px solid var(--border);">
+            <span style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;letter-spacing:-0.02em;">₹${p.price}</span>
+            <button class="btn-primary add-btn"
+              data-id="${p.id}"
+              data-name="${p.name}"
+              data-price="${p.price}"
+              data-shop="${p.shop}"
+              data-shop-id="${p.shop_id}"
+              data-category-name="${p.category_name}"
+              data-image-url="${p.image_url || ""}"
+              data-product-type="${p.product_type}"
+              data-stock="${p.stock}"
+              style="padding:9px 16px;font-size:0.8125rem;"
+              ${p.stock < 1 ? "disabled" : ""}
+            >${p.stock < 1 ? "Sold Out" : "+ Add"}</button>
+          </div>
+        </article>
+      `).join("");
+
+      document.querySelectorAll(".add-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const stock = Number(btn.dataset.stock || 0);
+          const ok = addToCart({
+            id: Number(btn.dataset.id),
+            name: btn.dataset.name,
+            price: Number(btn.dataset.price),
+            shop: btn.dataset.shop,
+            shop_id: Number(btn.dataset.shopId || 0),
+            category_name: btn.dataset.categoryName,
+            image_url: btn.dataset.imageUrl,
+            product_type: btn.dataset.productType,
+            stock,
+          }, 1);
+          if (!ok) {
+            showMessage(`Only ${stock} item(s) available`, "error");
+            return;
+          }
+          document.getElementById("cartBadge").textContent = getCartSummary().itemCount;
+          btn.textContent = "✓ Added";
+          btn.style.background = "var(--success)";
+          setTimeout(() => {
+            btn.textContent = "+ Add";
+            btn.style.background = "";
+          }, 1200);
+          showMessage("Added to cart", "success");
+        });
+      });
+    }
+
+    document.getElementById("productsSearch").addEventListener("input", loadProducts);
+    loadProducts().catch((e) => showMessage(e.message, "error"));
+  </script>
+</body>
+</html>
